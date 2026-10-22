@@ -1,46 +1,91 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate, Link, Navigate } from "react-router-dom";
+import { supabase } from "../supabaseClient";
 import "./auth.css";
+import { useAuth } from "../AuthContext";
 
 function Login() {
-  return (
-    <div className="auth-page">
-      <div className="auth-side">
-        <Link to="/" className="auth-brand">MyProgress</Link>
-        <div>
-          <h2>Welcome back</h2>
-          <p>Pick up where you left off and keep your progress moving.</p>
-        </div>
-        <span>© 2026 MyProgress</span>
-      </div>
+  const { user } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-      <div className="auth-main">
-        <div className="auth-form-wrap">
+  if (user) return <Navigate to="/" replace />;
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+    setLoading(false);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    navigate("/");
+  }
+
+  return (
+    <div>
+      <nav className="auth-topbar">
+        <Link to="/" className="auth-topbar-brand">← MyProgress</Link>
+        <Link to="/signup" className="auth-topbar-link">Need an account? Sign up</Link>
+      </nav>
+
+      <div className="auth-page">
+        <div className="auth-card">
           <h1>Log in</h1>
           <p className="auth-subtitle">Welcome back! Please enter your details.</p>
 
-          <form>
-            <label htmlFor="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              placeholder="you@example.com"
-            />
+          {error && <div className="auth-error">{error}</div>}
+
+          <form onSubmit={handleSubmit}>
+            <div className="auth-field">
+              <label htmlFor="email">Email</label>
+              <div className="auth-input-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 7l9 6 9-6M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" />
+                </svg>
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="auth-field">
+              <label htmlFor="password">Password</label>
+              <div className="auth-input-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="5" y="11" width="14" height="9" rx="2" />
+                  <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                </svg>
+                <input
+                  type="password"
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  required
+                />
+              </div>
+            </div>
 
             <div className="auth-row">
-              <label htmlFor="password">Password</label>
-              <Link to="/forgot-password" className="auth-forgot">
-                Forgot password?
-              </Link>
+              <Link to="/forgot-password" className="auth-forgot">Forgot password?</Link>
             </div>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              placeholder="Enter your password"
-            />
 
-            <button type="submit">Log in</button>
+            <button type="submit" className="auth-submit" disabled={loading}>
+              {loading ? "Logging in..." : "Log in"}
+            </button>
           </form>
 
           <p className="auth-switch">
